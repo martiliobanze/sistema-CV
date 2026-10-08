@@ -3,60 +3,186 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visualização do Currículo em Tempo Real</title>
+    <title>Painel de Criação - Currículos Moçambique</title>
     <style>
-        body { font-family: Arial, sans-serif; background: #cbd5e0; margin: 0; padding: 40px; display: flex; justify-content: center; }
-        .folha-a4 { width: 210mm; min-height: 297mm; background: white; padding: 50px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); border-radius: 4px; box-sizing: border-box; }
-        h1 { margin: 0; text-transform: uppercase; font-size: 28px; }
-        h3 { margin: 5px 0 0 0; color: #718096; font-size: 16px; font-weight: normal; }
-        .contactos { margin-top: 10px; font-size: 13px; color: #4a5568; }
-        .seccao-titulo { font-size: 14px; font-weight: bold; margin-top: 30px; border-bottom: 2px solid #e2e8f0; padding-bottom: 3px; letter-spacing: 1px; }
-        .texto-conteudo { font-size: 13px; color: #2d3748; line-height: 1.6; white-space: pre-line; margin-top: 8px; }
+        body { font-family: Arial, sans-serif; background: #f0f4f8; margin: 0; padding: 20px; display: flex; justify-content: center; }
+        .formulario-bloco { width: 100%; max-width: 650px; background: white; padding: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-radius: 8px; box-sizing: border-box; }
+        input, textarea, select { width: 100%; padding: 11px; margin-top: 5px; margin-bottom: 12px; border: 1px solid #cbd5e0; border-radius: 6px; box-sizing: border-box; }
+        .caixa-pagamento { background: #e6fffa; padding: 18px; border-radius: 6px; border-left: 5px solid #319795; margin-top: 15px; }
+        .btn-acao { width: 100%; background: #3182ce; color: white; padding: 14px; border: none; font-size: 16px; font-weight: bold; border-radius: 6px; cursor: pointer; margin-top: 10px; }
+        .btn-aba { background: #2b6cb0; margin-bottom: 20px; }
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); color: white; text-align: center; padding-top: 150px; z-index: 3000; }
+        .btn-teste { background: #e53e3e; color: white; padding: 10px 20px; border: none; font-weight: bold; border-radius: 4px; cursor: pointer; margin-top: 15px; }
     </style>
 </head>
 <body>
 
-    <div class="folha-a4">
-        <h1 id="vNome">Introduza o seu Nome</h1>
-        <h3 id="vTitulo">Seu Cargo Profissional</h3>
-        <div class="contactos">
-            <b>Email:</b> <span id="vEmail">-</span> | <b>Telefone:</b> <span id="vTel">-</span>
+<div class="overlay" id="janelaAguardar">
+    <h2>🔄 Aguardando Confirmação da Carteira Móvel</h2>
+    <p>Verifique o menu da sua operadora (M-Pesa **\*150#** ou e-Mola **\*898#**).</p>
+    <p>Introduza o seu PIN para validar a taxa de 50 MT.</p>
+    <hr style="width:45%; margin: 20px auto; border-color:#4a5568;">
+    <button class="btn-teste" id="btnSimularPin">Simular Aprovação (PIN correcto)</button>
+</div>
+
+<div class="formulario-bloco">
+    <h2>Plataforma de CV Personalizados</h2>
+    
+    <label>💡 Escolha um Exemplo Base de Estrutura:</label>
+    <select id="seleccaoExemplo" onchange="mudarExemploBase()">
+        <option value="martilio">Modelo 1: Exemplo Real (Martílio Banze - HPC)</option>
+        <option value="geral">Modelo 2: Exemplo Geral Comercial</option>
+    </select>
+
+    <button type="button" class="btn-acao btn-aba" onclick="abrirJanelaVisualizacao()">👁️ Abrir Pré-visualização numa Nova Aba</button>
+
+    <form id="meuForm">
+        <input type="hidden" name="template" id="iTemplate" value="martilio">
+        
+        <label>Nome Completo:</label>
+        <input type="text" name="nome" id="iNome" oninput="transmitirDados()">
+        
+        <label>Título Profissional:</label>
+        <input type="text" name="titulo_professional" id="iTitulo" oninput="transmitirDados()">
+
+        <label>Email:</label>
+        <input type="email" name="email" id="iEmail" oninput="transmitirDados()">
+
+        <label>Telefone de Contacto (CV):</label>
+        <input type="tel" name="telefone_contacto" id="iTelCont" oninput="transmitirDados()">
+
+        <label>Resumo de Perfil (Profile):</label>
+        <textarea name="perfil" id="iPerfil" rows="3" oninput="transmitirDados()"></textarea>
+
+        <label>Educação (Education):</label>
+        <textarea name="educacao" id="iEdu" rows="3" oninput="transmitirDados()"></textarea>
+
+        <label>Experiência Profissional:</label>
+        <textarea name="experiencia" id="iExp" rows="5" oninput="transmitirDados()"></textarea>
+
+        <label>Certificações e Cursos:</label>
+        <textarea name="certificacoes" id="iCert" rows="3" oninput="transmitirDados()"></textarea>
+
+        <label>Ferramentas & Competências (Nome,Nível de 1 a 5):</label>
+        <textarea name="competencias" id="iComp" rows="4" oninput="transmitirDados()"></textarea>
+
+        <label>Cor de Destaque:</label>
+        <select name="cor" id="iCor" onchange="transmitirDados()">
+            <option value="#1a365d">Azul Marinho</option>
+            <option value="#9b2c2c">Vermelho Terracota</option>
+            <option value="#234e52">Verde Petróleo</option>
+        </select>
+
+        <div class="caixa-pagamento">
+            <h3>Facturação Segura via USSD Push</h3>
+            <label>Carteira Móvel:</label>
+            <select name="carteira">
+                <option value="mpesa">M-Pesa (*150#) -> Recebe no 844330181</option>
+                <option value="emola">e-Mola (*898#) -> Recebe no 861010333</option>
+            </select>
+            <label>Número do Telemóvel do Cliente (PIN):</label>
+            <input type="tel" name="telefone" placeholder="84XXXXXXX ou 86XXXXXXX" required>
         </div>
-        
-        <div class="seccao-titulo" id="s1">PERFIL PROFISSIONAL</div>
-        <div class="texto-conteudo" id="vPerfil">-</div>
-        
-        <div class="seccao-titulo" id="s2">EXPERIÊNCIA PROFISSIONAL</div>
-        <div class="texto-conteudo" id="vExp">-</div>
-        
-        <div class="seccao-titulo" id="s3">EDUCAÇÃO E FORMAÇÃO</div>
-        <div class="texto-conteudo" id="vEdu">-</div>
-    </div>
+
+        <button type="button" class="btn-acao" onclick="enviarFormulario()">Validar Carteira Móvel e Baixar CV</button>
+    </form>
+</div>
 
 <script>
-    // Criar o canal de escuta partilhado com a página do formulário
-    const canal = new BroadcastChannel('cv_canal');
+const canal = new BroadcastChannel('cv_canal');
 
-    // Escutar as alterações enviadas pelo formulário
-    canal.onmessage = (evento) => {
-        const dados = evento.data;
-        
-        document.getElementById('vNome').innerText = dados.nome || 'Introduza o seu Nome';
-        document.getElementById('vNome').style.color = dados.cor;
-        document.getElementById('vTitulo').innerText = dados.titulo || 'Seu Cargo Profissional';
-        document.getElementById('vEmail').innerText = dados.email || '-';
-        document.getElementById('vTel').innerText = dados.telefone_contacto || '-';
-        document.getElementById('vPerfil').innerText = dados.perfil || '-';
-        document.getElementById('vExp').innerText = dados.experiencia || '-';
-        document.getElementById('vEdu').innerText = dados.educacao || '-';
-        
-        // Actualizar a cor das linhas divisórias
-        ['s1', 's2', 's3'].forEach(id => {
-            document.getElementById(id).style.color = dados.cor;
-            document.getElementById(id).style.borderBottomColor = dados.cor;
-        });
-    };
+const exemplos = {
+    martilio: {
+        nome: "Martílio R. Banze",
+        titulo: "HPC Systems Administrator & Data Scientist",
+        email: "martiliobanze@gmail.com",
+        tel: "(+258) 844330181",
+        perfil: "HPC Ecosystems Administrator and Data Scientist, com vasta experiência na configuração e optimização de infra-estruturas de computação distribuída e clusters (SLURM, PBS Pro).",
+        edu: "Bacharelato em Meteorologia (2013 - 2018) - UEM\nBacharelato em Ensino de Física e Matemática (2018 - 2023) - UPM",
+        exp: "HPC Systems Administrator (2022 - Corrente) - MCTD/MoRENet\nInformation Officer (2018 - 2021) - INGD\nAsset Manager (2016 - 2017) - Movitel, SA",
+        cert: "Applied Data Science Lab (WQU, 2026)\nGovernment Staff Training (Huawei, 2025)",
+        comp: "OpenHPC,5\nSLURM,5\nLinux,5\nPython,5\nDocker,4",
+        template: "martilio"
+    },
+    geral: {
+        nome: "Joana Alberto",
+        titulo: "Gestora Comercial & Marketing",
+        email: "joana.alberto@gmail.com",
+        tel: "(+258) 840000000",
+        perfil: "Profissional focada no incremento de vendas e gestão técnica de carteiras de clientes corporativos.",
+        edu: "Licenciatura em Gestão de Empresas (2015 - 2019) - UEM",
+        exp: "Consultora de Vendas (2021 - Actualidade) - Vodacom Moçambique",
+        cert: "Marketing Digital Avançado (2023)",
+        comp: "Negociação,5\nExcel Avançado,4\nGestão de Equipas,4",
+        template: "geral"
+    }
+};
+
+function mudarExemploBase() {
+    const tipo = document.getElementById('seleccaoExemplo').value;
+    const dados = exemplos[tipo];
+    
+    document.getElementById('iNome').value = dados.nome;
+    document.getElementById('iTitulo').value = dados.titulo;
+    document.getElementById('iEmail').value = dados.email;
+    document.getElementById('iTelCont').value = dados.tel;
+    document.getElementById('iPerfil').value = dados.perfil;
+    document.getElementById('iEdu').value = dados.edu;
+    document.getElementById('iExp').value = dados.exp;
+    document.getElementById('iCert').value = dados.cert;
+    document.getElementById('iComp').value = dados.comp;
+    document.getElementById('iTemplate').value = dados.template;
+    
+    transmitirDados();
+}
+
+function abrirJanelaVisualizacao() {
+    window.open('/preview', '_blank');
+    setTimeout(transmitirDados, 800);
+}
+
+function transmitirDados() {
+    canal.postMessage({
+        nome: document.getElementById('iNome').value,
+        titulo: document.getElementById('iTitulo').value,
+        email: document.getElementById('iEmail').value,
+        telefone_contacto: document.getElementById('iTelCont').value,
+        perfil: document.getElementById('iPerfil').value,
+        educacao: document.getElementById('iEdu').value,
+        experiencia: document.getElementById('iExp').value,
+        certificacoes: document.getElementById('iCert').value,
+        competencias: document.getElementById('iComp').value,
+        cor: document.getElementById('iCor').value,
+        template: document.getElementById('iTemplate').value
+    });
+}
+
+let verificarIntervalo;
+
+function enviarFormulario() {
+    document.getElementById('janelaAguardar').style.display = 'block';
+    fetch('/iniciar-pagamento', { method: 'POST', body: new FormData(document.getElementById('meuForm')) })
+    .then(res => res.json())
+    .then(data => {
+        if(data.status === "SUCCESS") {
+            const ref = data.ref;
+            document.getElementById('btnSimularPin').onclick = function() {
+                fetch(`/confirmar-pagamento-teste/${ref}`).then(res => res.json());
+            };
+            verificarIntervalo = setInterval(() => {
+                fetch(`/checar-status/${ref}`).then(res => res.json()).then(statusData => {
+                    if(statusData.status === "PAID") {
+                        clearInterval(verificarIntervalo);
+                        document.getElementById('janelaAguardar').style.display = 'none';
+                        window.location.href = `/descarregar-pdf/${ref}`;
+                    }
+                });
+            }, 3000);
+        }
+    });
+}
+
+window.onload = mudarExemploBase;
 </script>
-
 </body>
 </html>
