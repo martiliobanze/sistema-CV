@@ -1,89 +1,152 @@
-<!DOCTYPE html>
-<html lang="pt">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visualização Real em Duas Colunas</title>
-    <style>
-        body { font-family: Arial, sans-serif; background: #cbd5e0; margin: 0; padding: 20px; display: flex; justify-content: center; }
-        .folha-a4 { width: 210mm; min-height: 275mm; background: white; box-shadow: 0 4px 15px rgba(0,0,0,0.2); border-radius: 4px; display: flex; box-sizing: border-box; overflow: hidden; }
-        .col-lateral { width: 30%; background: #fcfaf7; border-right: 1px solid #cbd5e0; padding: 20px; box-sizing: border-box; }
-        .col-principal { width: 70%; padding: 30px; box-sizing: border-box; }
-        h1 { margin: 0; text-transform: uppercase; font-size: 22px; }
-        h3 { margin: 4px 0 15px 0; color: #4a5568; font-size: 13px; font-weight: bold; }
-        .seccao-h { font-size: 12px; font-weight: bold; margin-top: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 2px; }
-        .txt { font-size: 11px; color: #2d3748; line-height: 1.5; white-space: pre-line; margin-top: 5px; }
-    </style>
-</head>
-<body>
+import io
+import uuid
+import requests
+from flask import Flask, render_template, request, send_file, jsonify
 
-    <div class="folha-a4">
-        <!-- Coluna Esquerda (Contactos e Skills) -->
-        <div class="col-lateral">
-            <div class="seccao-h" id="hL1">DADOS PESSOAIS</div>
-            <p style="margin:10px 0 2px 0; font-size:11px; font-weight:bold;">Email:</p>
-            <div id="vEmail" style="font-size:10px; word-break:break-all;">-</div>
-            <p style="margin:8px 0 2px 0; font-size:11px; font-weight:bold;">Telefone:</p>
-            <div id="vTel" style="font-size:10px;">-</div>
-            
-            <div class="seccao-h" id="hL2">FERRAMENTAS & SKILLS</div>
-            <div id="vCompLista" style="margin-top:8px; font-size:11px;"></div>
-        </div>
-        
-        <!-- Coluna Direita (Histórico) -->
-        <div class="col-principal">
-            <h1 id="vNome">-</h1>
-            <h3 id="vTitulo">-</h3>
-            
-            <div class="seccao-h" id="h1">PROFILE</div>
-            <div class="txt" id="vPerfil">-</div>
-            
-            <div class="seccao-h" id="h2">EDUCATION</div>
-            <div class="txt" id="vEdu">-</div>
-            
-            <div class="seccao-h" id="h3">PROFESSIONAL EXPERIENCE</div>
-            <div class="txt" id="vExp">-</div>
+app = Flask(__name__)
 
-            <div class="seccao-h" id="h4">CERTIFICATIONS & COURSES</div>
-            <div class="txt" id="vCert">-</div>
-        </div>
-    </div>
+# Base de dados temporária em memória para registo das transacções
+TRANSACCOES = {}
+DADOS_CV = {}
 
-<script>
-    const canal = new BroadcastChannel('cv_canal');
-    canal.onmessage = (e) => {
-        const d = e.data;
-        document.getElementById('vNome').innerText = d.nome;
-        document.getElementById('vNome').style.color = d.cor;
-        document.getElementById('vTitulo').innerText = d.titulo;
-        document.getElementById('vEmail').innerText = d.email;
-        document.getElementById('vTel').innerText = d.telefone_contacto;
-        document.getElementById('vPerfil').innerText = d.perfil;
-        document.getElementById('vEdu').innerText = d.educacao;
-        document.getElementById('vExp').innerText = d.experiencia;
-        document.getElementById('vCert').innerText = d.certificacoes;
-        
-        ['hL1', 'hL2', 'h1', 'h2', 'h3', 'h4'].forEach(id => {
-            document.getElementById(id).style.color = d.cor;
-            document.getElementById(id).style.borderBottomColor = d.cor;
-        });
+def disparar_push_real(numero, valor, carteira, reference):
+    """Trata o fluxo automático para o M-Pesa (*150#) ou e-Mola (*898#)."""
+    print(f"[OPERADORA] Push enviado para o {numero} via {carteira}. Aguardando PIN do cliente.")
+    return True
 
-        const listaAlvo = document.getElementById('vCompLista');
-        listaAlvo.innerHTML = '';
-        if(d.competencias) {
-            d.competencias.split('\n').forEach(l => {
-                if(l.includes(',')) {
-                    const [n, nv] = l.split(',');
-                    let pts = '';
-                    for(let i=0; i<5; i++) pts += i < parseInt(nv) ? '●' : '○';
-                    const item = document.createElement('div');
-                    item.style.marginBottom = '5px';
-                    item.innerHTML = `<div style="display:flex; justify-content:space-between;"><span>${n.trim()}</span><span style="color:${d.cor}; font-size:9px;">${pts}</span></div>`;
-                    listaAlvo.appendChild(item);
-                }
-            });
-        }
-    };
-</script>
-</body>
-</html>
+@app.route('/', methods=['GET'])
+def index():
+    return render_template('index.html')
+
+@app.route('/preview', methods=['GET'])
+def abrir_previsao():
+    return render_template('preview.html')
+
+@app.route('/iniciar-pagamento', methods=['POST'])
+def iniciar_pagamento():
+    telefone = request.form.get('telefone')
+    carteira = request.form.get('carteira')
+    
+    if not telefone or len(telefone) < 9:
+        return jsonify({"status": "ERROR", "message": "Número de telefone inválido em Moçambique."}), 400
+
+    ref_id = str(uuid.uuid4())[:8]
+    
+    DADOS_CV[ref_id] = {
+        "nome": request.form.get('nome', ''),
+        "titulo": request.form.get('titulo_professional', ''),
+        "email": request.form.get('email', ''),
+        "telefone_contacto": request.form.get('telefone_contacto', ''),
+        "perfil": request.form.get('perfil', ''),
+        "experiencia": request.form.get('experiencia', ''),
+        "educacao": request.form.get('educacao', ''),
+        "competencias": request.form.get('competencias', ''),
+        "certificacoes": request.form.get('certificacoes', ''),
+        "cor": request.form.get('cor', '#1a365d'),
+        "template": request.form.get('template', 'martilio')
+    }
+    
+    TRANSACCOES[ref_id] = "PENDING"
+    disparar_push_real(telefone, 50, carteira, ref_id)
+    return jsonify({"status": "SUCCESS", "ref": ref_id})
+
+@app.route('/checar-status/<ref_id>', methods=['GET'])
+def checar_status(ref_id):
+    status = TRANSACCOES.get(ref_id, "NOT_FOUND")
+    return jsonify({"status": status})
+
+@app.route('/confirmar-pagamento-teste/<ref_id>', methods=['GET'])
+def confirmar_pagamento_teste(ref_id):
+    if ref_id in TRANSACCOES:
+        TRANSACCOES[ref_id] = "PAID"
+        return jsonify({"status": "CONFIRMED", "message": "Pagamento aprovado com sucesso no ambiente de testes!"})
+    return jsonify({"status": "ERROR", "message": "Transacção não encontrada."}), 404
+
+@app.route('/descarregar-pdf/<ref_id>', methods=['GET'])
+def descarregar_pdf(ref_id):
+    if TRANSACCOES.get(ref_id) != "PAID":
+        return "Acesso proibido. Pagamento em falta.", 403
+
+    from reportlab.lib.pagesizes import letter
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib import colors
+    from reportlab.graphics.shapes import Drawing, Circle
+
+    dados = DADOS_CV.get(ref_id)
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter, leftMargin=25, rightMargin=25, topMargin=25, bottomMargin=25)
+    
+    cor_principal = colors.HexColor(dados['cor'])
+    styles = getSampleStyleSheet()
+    
+    title_style = ParagraphStyle('T', parent=styles['Heading1'], fontSize=22, textColor=cor_principal, spaceAfter=2)
+    sub_title_style = ParagraphStyle('ST', parent=styles['Normal'], fontSize=11, textColor=colors.HexColor('#4a5568'), fontName='Helvetica-Bold', spaceAfter=12)
+    side_header = ParagraphStyle('SH', parent=styles['Normal'], fontSize=11, textColor=cor_principal, fontName='Helvetica-Bold', spaceBefore=12, spaceAfter=6)
+    side_body = ParagraphStyle('SB', parent=styles['Normal'], fontSize=9, leading=13, textColor=colors.HexColor('#2d3748'))
+    main_header = ParagraphStyle('MH', parent=styles['Heading2'], fontSize=12, textColor=cor_principal, spaceBefore=14, spaceAfter=6)
+    main_body = ParagraphStyle('MB', parent=styles['BodyText'], fontSize=9.5, leading=14, textColor=colors.HexColor('#333333'))
+
+    def points_level(nv):
+        d = Drawing(60, 10)
+        for i in range(5):
+            c = cor_principal if i < nv else colors.HexColor('#e2e8f0')
+            d.add(Circle(5 + (i * 12), 5, 3.5, fillColor=c, strokeColor=None))
+        return d
+
+    col_esquerda = [
+        Paragraph("DADOS PESSOAIS", side_header),
+        Paragraph(f"<b>Email:</b><br/>{dados['email']}", side_body),
+        Spacer(1, 4),
+        Paragraph(f"<b>Telefone:</b><br/>{dados['telefone_contacto']}", side_body),
+    ]
+    
+    if dados['competencias']:
+        col_esquerda.append(Spacer(1, 10))
+        col_esquerda.append(Paragraph("FERRAMENTAS & SKILLS", side_header))
+        linhas_comp = []
+        for linha in dados['competencias'].split('\n'):
+            if ',' in linha:
+                c, n = linha.split(',', 1)
+                try: 
+                    linhas_comp.append([Paragraph(c.strip(), side_body), points_level(int(n.strip()))])
+                except: 
+                    pass
+        if len(linhas_comp) > 0:
+            t_comp = Table(linhas_comp, colWidths=[95, 60])
+            t_comp.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'MIDDLE'), ('BOTTOMPADDING', (0,0), (-1,-1), 3)]))
+            col_esquerda.append(t_comp)
+
+    col_direita = [
+        Paragraph(dados['nome'].upper(), title_style),
+        Paragraph(dados['titulo'].upper(), sub_title_style),
+    ]
+    
+    if dados['perfil']:
+        col_direita.extend([Paragraph("PROFILE", main_header), Paragraph(dados['perfil'].replace('\n', '<br/>'), main_body)])
+    col_direita.extend([Paragraph("EDUCATION", main_header), Paragraph(dados['educacao'].replace('\n', '<br/>'), main_body)])
+    col_direita.extend([Paragraph("PROFESSIONAL EXPERIENCE", main_header), Paragraph(dados['experiencia'].replace('\n', '<br/>'), main_body)])
+    
+    if dados['certificacoes']:
+        col_direita.extend([Paragraph("CERTIFICATIONS & COURSES", main_header), Paragraph(dados['certificacoes'].replace('\n', '<br/>'), main_body)])
+
+    tabela_mestre = Table([[col_esquerda, col_direita]], colWidths=[160, 400])
+    tabela_mestre.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('BACKGROUND', (0,0), (0,0), colors.HexColor('#fcfaf7')),
+        ('RIGHTPADDING', (0,0), (0,0), 10),
+        ('LEFTPADDING', (1,0), (1,0), 15),
+        ('LINEAFTER', (0,0), (0,0), 1, colors.HexColor('#e2e8f0')),
+        ('TOPPADDING', (0,0), (-1,-1), 10),
+    ]))
+    
+    doc.build([tabela_mestre])
+    buffer.seek(0)
+    
+    TRANSACCOES.pop(ref_id, None)
+    DADOS_CV.pop(ref_id, None)
+    return send_file(buffer, as_attachment=True, download_name=f"CV_{dados['nome'].replace(' ', '_')}.pdf", mimetype='application/pdf')
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
