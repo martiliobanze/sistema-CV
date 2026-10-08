@@ -3,172 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plataforma de Currículos com Pré-visualização</title>
+    <title>Visualização do Currículo em Tempo Real</title>
     <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f4f8; margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; }
-        .main-container { display: flex; flex: 1; overflow: hidden; }
-        
-        /* Painel de Preenchimento (Esquerda) */
-        .painel-formulario { width: 45%; background: white; padding: 25px; overflow-y: auto; border-right: 2px solid #e2e8f0; box-sizing: border-box; }
-        h3 { border-bottom: 2px solid #edf2f7; padding-bottom: 6px; color: #2d3748; margin-top: 25px; }
-        label { font-weight: 600; display: block; margin-top: 12px; color: #4a5568; font-size: 13px; }
-        input, textarea, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #cbd5e0; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
-        
-        /* Painel de Visualização (Direita) */
-        .painel-previsao { width: 55%; background: #cbd5e0; padding: 30px; display: flex; justify-content: center; align-items: flex-start; overflow-y: auto; box-sizing: border-box; }
-        .folha-a4 { width: 100%; max-width: 500px; min-height: 650px; background: white; box-shadow: 0 4px 15px rgba(0,0,0,0.15); display: flex; box-sizing: border-box; border-radius: 4px; overflow: hidden; }
-        
-        /* Divisão de Colunas no Modelo do CV */
-        .cv-lateral { width: 32%; background: #fcfaf7; border-right: 1px solid #e2e8f0; padding: 15px; box-sizing: border-box; font-size: 11px; }
-        .cv-principal { width: 68%; padding: 20px; box-sizing: border-box; }
-        .cv-titulo-seccao { font-size: 12px; font-weight: bold; margin-top: 15px; border-bottom: 1px solid #edf2f7; padding-bottom: 2px; }
-        .cv-texto { font-size: 11px; color: #4a5568; line-height: 1.4; white-space: pre-line; margin-top: 4px; }
-        
-        /* Sistema de Cobrança e Bloqueio */
-        .pagamento-bloco { background: #e6fffa; padding: 15px; border-radius: 6px; margin-top: 20px; border-left: 4px solid #319795; }
-        .btn-comprar { width: 100%; background: #3182ce; color: white; padding: 14px; border: none; font-size: 16px; font-weight: bold; border-radius: 6px; cursor: pointer; margin-top: 15px; }
-        .btn-comprar:hover { background: #2b6cb0; }
-        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); color: white; text-align: center; padding-top: 180px; font-size: 18px; z-index: 2000; }
-
-        @media (max-width: 768px) {
-            .main-container { flex-direction: column; overflow: visible; }
-            .painel-formulario, .painel-previsao { width: 100%; height: auto; overflow: visible; }
-        }
+        body { font-family: Arial, sans-serif; background: #cbd5e0; margin: 0; padding: 40px; display: flex; justify-content: center; }
+        .folha-a4 { width: 210mm; min-height: 297mm; background: white; padding: 50px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); border-radius: 4px; box-sizing: border-box; }
+        h1 { margin: 0; text-transform: uppercase; font-size: 28px; }
+        h3 { margin: 5px 0 0 0; color: #718096; font-size: 16px; font-weight: normal; }
+        .contactos { margin-top: 10px; font-size: 13px; color: #4a5568; }
+        .seccao-titulo { font-size: 14px; font-weight: bold; margin-top: 30px; border-bottom: 2px solid #e2e8f0; padding-bottom: 3px; letter-spacing: 1px; }
+        .texto-conteudo { font-size: 13px; color: #2d3748; line-height: 1.6; white-space: pre-line; margin-top: 8px; }
     </style>
 </head>
 <body>
 
-<div class="overlay" id="telaAguardar">
-    <p>🔄 Ordem de cobrança emitida com sucesso!</p>
-    <p>Valide a transacção inserindo o seu PIN no ecrã do telemóvel para pagar os 50 MT.</p>
-    <p style="font-size:13px; color:#a0aec0;">O download iniciará de forma 100% automática após a aprovação.</p>
-    <div id="linkSimulacao" style="margin-top:25px; font-size:13px;"></div>
-</div>
-
-<div class="main-container">
-    
-    <!-- LADO ESQUERDO: FORMULÁRIO -->
-    <div class="painel-formulario">
-        <h2 style="margin-top:0; color:#1a365d;">Criador de CV Remoto</h2>
-        <form id="formCV">
-            <h3>1. Dados e Contactos</h3>
-            <label>Nome Completo:</label>
-            <input type="text" name="nome" id="inNome" value="Martílio Banze" oninput="actualizarPrevisao()" required>
-
-            <label>Título Profissional:</label>
-            <input type="text" name="titulo_professional" id="inTitulo" value="Administrador de Sistemas & Cientista de Dados" oninput="actualizarPrevisao()" required>
-
-            <label>Email de Contacto:</label>
-            <input type="email" name="email" id="inEmail" value="martiliobanze@gmail.com" oninput="actualizarPrevisao()" required>
-
-            <label>Telefone de Contacto (Para exibir no CV):</label>
-            <input type="tel" name="telefone_contacto" id="inTelContacto" value="(+258) 844330181" oninput="actualizarPrevisao()" required>
-
-            <h3>2. Percurso e Habilidades</h3>
-            <label>Perfil Profissional:</label>
-            <textarea name="perfil" id="inPerfil" rows="3" oninput="actualizarPrevisao()">Especialista na gestão, configuração e optimização de infra-estruturas críticas e computação distribuída.</textarea>
-
-            <label>Experiência Profissional:</label>
-            <textarea name="experiencia" id="inExp" rows="4" oninput="actualizarPrevisao()">HPC Systems Administrator (2022-Actualidade)
-MCTD/MoRENet, Maputo
-• Manutenção e monitorização de servidores remotos de computação intensiva.</textarea>
-
-            <label>Educação e Cursos:</label>
-            <textarea name="educacao" id="inEdu" rows="3" oninput="actualizarPrevisao()">Licenciatura em Meteorologia (2013 - 2018)
-Universidade Eduardo Mondlane (UEM), Maputo</textarea>
-
-            <label>Competências (Formato: Nome,Estrelas de 1 a 5):</label>
-            <textarea name="competencias" id="inComp" rows="3" placeholder="Ex:\nLinux,5\nPython,4" oninput="actualizarPrevisao()">Linux,5
-Python,4
-Docker,3</textarea>
-
-            <h3>3. Personalização Visual</h3>
-            <label>Escolha a Cor da Estrutura:</label>
-            <select name="cor" id="inCor" onchange="actualizarPrevisao()">
-                <option value="#1a365d">Azul Profundo Escuro</option>
-                <option value="#9b2c2c">Vermelho Carmim</option>
-                <option value="#234e52">Verde Floresta</option>
-                <option value="#2d3748">Preto Antracite</option>
-            </select>
-
-            <div class="pagamento-bloco">
-                <h3>4. Facturação Automática (Preço: 50 MT)</h3>
-                <label>Seleccione a Rede Móvel:</label>
-                <select name="carteira">
-                    <option value="mpesa">M-Pesa (Vodacom) - 844330181</option>
-                    <option value="emola">e-Mola (Movitel) - 861010333</option>
-                </select>
-
-                <label>Número de Telemóvel da Cobrança:</label>
-                <input type="tel" name="telefone" placeholder="Ex: 844330181" required>
-            </div>
-
-            <button type="button" class="btn-comprar" onclick="executarCobrancaMovel()">Pagar e Obter CV em PDF</button>
-        </form>
-    </div>
-    
-    <!-- LADO DIREITO: PRÉ-VISUALIZAÇÃO AO VIVO -->
-    <div class="painel-previsao">
-        <div class="folha-a4">
-            
-            <!-- Coluna Esquerda do PDF Simulado -->
-            <div class="cv-lateral">
-                <div style="width:70px; height:70px; background:#e2e8f0; border-radius:50%; margin: 0 auto 15px auto; display:flex; justify-content:center; align-items:center; color:#718096; font-size:10px;">FOTO</div>
-                
-                <div class="cv-titulo-seccao" id="vSecLateral1">DADOS PESSOAIS</div>
-                <p style="margin:5px 0 2px 0; font-weight:bold;">Email:</p>
-                <div id="vEmail" style="word-break: break-all;">-</div>
-                <p style="margin:4px 0 2px 0; font-weight:bold;">Telefone:</p>
-                <div id="vTelContacto">-</div>
-                
-                <div class="cv-titulo-seccao" id="vSecLateral2">COMPETÊNCIAS</div>
-                <div id="vCompLista" style="margin-top:5px;"></div>
-            </div>
-            
-            <!-- Coluna Direita do PDF Simulado -->
-            <div class="cv-principal">
-                <div id="vNome" style="font-size:18px; font-weight:bold; text-transform:uppercase;">-</div>
-                <div id="vTitulo" style="font-size:10px; font-weight:bold; color:#718096; margin-top:2px;">-</div>
-                
-                <div class="cv-titulo-seccao" id="vSec1">PERFIL</div>
-                <div class="cv-texto" id="vPerfil">-</div>
-                
-                <div class="cv-titulo-seccao" id="vSec2">EXPERIÊNCIA PROFISSIONAL</div>
-                <div class="cv-texto" id="vExp">-</div>
-                
-                <div class="cv-titulo-seccao" id="vSec3">EDUCAÇÃO E FORMAÇÃO</div>
-                <div class="cv-texto" id="vEdu">-</div>
-            </div>
-            
+    <div class="folha-a4">
+        <h1 id="vNome">Introduza o seu Nome</h1>
+        <h3 id="vTitulo">Seu Cargo Profissional</h3>
+        <div class="contactos">
+            <b>Email:</b> <span id="vEmail">-</span> | <b>Telefone:</b> <span id="vTel">-</span>
         </div>
+        
+        <div class="seccao-titulo" id="s1">PERFIL PROFISSIONAL</div>
+        <div class="texto-conteudo" id="vPerfil">-</div>
+        
+        <div class="seccao-titulo" id="s2">EXPERIÊNCIA PROFISSIONAL</div>
+        <div class="texto-conteudo" id="vExp">-</div>
+        
+        <div class="seccao-titulo" id="s3">EDUCAÇÃO E FORMAÇÃO</div>
+        <div class="texto-conteudo" id="vEdu">-</div>
     </div>
-    
-</div>
 
 <script>
-function actualizarPrevisao() {
-    // Captura dos elementos de texto
-    const cor = document.getElementById('inCor').value;
-    document.getElementById('vNome').innerText = document.getElementById('inNome').value || 'Seu Nome';
-    document.getElementById('vNome').style.color = cor;
-    document.getElementById('vTitulo').innerText = document.getElementById('inTitulo').value || 'Cargo Profissional';
-    document.getElementById('vEmail').innerText = document.getElementById('inEmail').value || '-';
-    document.getElementById('vTelContacto').innerText = document.getElementById('inTelContacto').value || '-';
-    document.getElementById('vPerfil').innerText = document.getElementById('inPerfil').value || '-';
-    document.getElementById('vExp').innerText = document.getElementById('inExp').value || '-';
-    document.getElementById('vEdu').innerText = document.getElementById('inEdu').value || '-';
-    
-    // Atualizar cores dos cabeçalhos das secções para simular fidelidade ao PDF
-    const seccoes = ['vSecLateral1', 'vSecLateral2', 'vSec1', 'vSec2', 'vSec3'];
-    seccoes.forEach(id => {
-        document.getElementById(id).style.color = cor;
-    });
+    // Criar o canal de escuta partilhado com a página do formulário
+    const canal = new BroadcastChannel('cv_canal');
 
-    // Renderizar a lista de competências com indicadores visuais simplificados
-    const compText = document.getElementById('inComp').value;
-    const listaAlvo = document.getElementById('vCompLista');
-    listaAlvo.innerHTML = '';
-    
-    compText.split('\n').forEach(linha => {
-        if(linha.includes(',')) {
-            const [nome, nivel] = linha.split(',');
+    // Escutar as alterações enviadas pelo formulário
+    canal.onmessage = (evento) => {
+        const dados = evento.data;
+        
+        document.getElementById('vNome').innerText = dados.nome || 'Introduza o seu Nome';
+        document.getElementById('vNome').style.color = dados.cor;
+        document.getElementById('vTitulo').innerText = dados.titulo || 'Seu Cargo Profissional';
+        document.getElementById('vEmail').innerText = dados.email || '-';
+        document.getElementById('vTel').innerText = dados.telefone_contacto || '-';
+        document.getElementById('vPerfil').innerText = dados.perfil || '-';
+        document.getElementById('vExp').innerText = dados.experiencia || '-';
+        document.getElementById('vEdu').innerText = dados.educacao || '-';
+        
+        // Actualizar a cor das linhas divisórias
+        ['s1', 's2', 's3'].forEach(id => {
+            document.getElementById(id).style.color = dados.cor;
+            document.getElementById(id).style.borderBottomColor = dados.cor;
+        });
+    };
+</script>
+
+</body>
+</html>
