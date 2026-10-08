@@ -1,145 +1,150 @@
-import io
-import uuid
-from flask import Flask, render_template, request, send_file, jsonify
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Criador de Currículos Moçambique</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f0f4f8; margin: 0; padding: 0; display: flex; height: 100vh; }
+        .formulario-bloco { width: 45%; background: white; padding: 25px; overflow-y: auto; border-right: 2px solid #cbd5e0; box-sizing: border-box; }
+        .previsao-bloco { width: 55%; background: #cbd5e0; padding: 30px; display: flex; justify-content: center; overflow-y: auto; box-sizing: border-box; }
+        .folha-a4 { width: 100%; max-width: 450px; background: white; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border-radius: 4px; }
+        input, textarea, select { width: 100%; padding: 10px; margin-top: 5px; margin-bottom: 12px; border: 1px solid #cbd5e0; border-radius: 6px; box-sizing: border-box; }
+        .caixa-pagamento { background: #e6fffa; padding: 15px; border-radius: 6px; border-left: 5px solid #319795; }
+        .btn-acao { width: 100%; background: #3182ce; color: white; padding: 12px; border: none; font-size: 16px; font-weight: bold; border-radius: 6px; cursor: pointer; }
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); color: white; text-align: center; padding-top: 150px; z-index: 3000; }
+        .btn-teste { background: #e53e3e; color: white; padding: 10px 20px; border: none; font-weight: bold; border-radius: 4px; cursor: pointer; margin-top: 15px; }
+    </style>
+</head>
+<body>
 
-app = Flask(__name__)
+<div class="overlay" id="janelaAguardar">
+    <h2>🔄 Ordem Enviada para a Rede Móvel!</h2>
+    <p>Se escolheu M-Pesa, aguarde o menu do **\*150#** no ecrã. Se escolheu e-Mola, aguarde o menu do **\*898#**.</p>
+    <p>Introduza o seu PIN para confirmar a taxa de 50 MT.</p>
+    <hr style="width:50%; margin: 20px auto; border-color:#4a5568;">
+    <p style="font-size:14px; color:#cbd5e0;">[AMBIENTE DE TESTES] Clique abaixo para simular que o cliente já digitou o PIN no telemóvel:</p>
+    <button class="btn-teste" id="btnSimularPin">Simular Confirmação de PIN (Aprovar)</button>
+</div>
 
-TRANSACCOES = {}
-DADOS_CV = {}
+<div class="formulario-bloco">
+    <h2>Dados do Currículo</h2>
+    <form id="meuForm">
+        <label>Nome Completo:</label>
+        <input type="text" name="nome" id="iNome" value="Martílio Banze" oninput="aoDigitar()">
+        
+        <label>Título Profissional:</label>
+        <input type="text" name="titulo_professional" id="iTitulo" value="Administrador de Sistemas & Cientista de Dados" oninput="aoDigitar()">
 
-@app.route('/', methods=['GET'])
-def index():
-    return render_template('index.html')
+        <label>Email:</label>
+        <input type="email" name="email" id="iEmail" value="martiliobanze@gmail.com" oninput="aoDigitar()">
 
-@app.route('/iniciar-pagamento', methods=['POST'])
-def iniciar_pagamento():
-    telefone = request.form.get('telefone')
-    carteira = request.form.get('carteira')
-    
-    if not telefone or len(telefone) < 9:
-        return jsonify({"status": "ERROR", "message": "Número de telefone inválido."}), 400
+        <label>Telefone de Contacto:</label>
+        <input type="tel" name="telefone_contacto" id="iTelCont" value="844330181" oninput="aoDigitar()">
 
-    ref_id = str(uuid.uuid4())
-    
-    # Armazenamento seguro de todos os dados preenchidos
-    DADOS_CV[ref_id] = {
-        "nome": request.form.get('nome', ''),
-        "titulo": request.form.get('titulo_profissional', ''),
-        "email": request.form.get('email', ''),
-        "telefone_contacto": request.form.get('telefone_contacto', ''),
-        "perfil": request.form.get('perfil', ''),
-        "experiencia": request.form.get('experiencia', ''),
-        "educacao": request.form.get('educacao', ''),
-        "competencias": request.form.get('competencias', ''),
-        "cor": request.form.get('cor', '#1a365d')
-    }
-    
-    TRANSACCOES[ref_id] = "PENDING"
-    print(f"[API] Solicitado pagamento de 50 MT ao {telefone} via {carteira}. Ref: {ref_id}")
-    
-    return jsonify({"status": "SUCCESS", "ref": ref_id})
+        <label>Resumo de Perfil:</label>
+        <textarea name="perfil" id="iPerfil" rows="3" oninput="aoDigitar()">Especialista em HPC e computação distribuída.</textarea>
 
-@app.route('/checar-status/<ref_id>', methods=['GET'])
-def checar_status(ref_id):
-    status = TRANSACCOES.get(ref_id, "NOT_FOUND")
-    return jsonify({"status": status})
+        <label>Experiência Profissional:</label>
+        <textarea name="experiencia" id="iExp" rows="3" oninput="aoDigitar()">HPC Systems Administrator (2022-Actualidade) - MCTD/MoRENet</textarea>
 
-@app.route('/simular-sucesso/<ref_id>', methods=['GET'])
-def simular_sucesso(ref_id):
-    if ref_id in TRANSACCOES:
-        TRANSACCOES[ref_id] = "PAID"
-        return f"Sucesso simulado para a referência: {ref_id}. Pode voltar ao formulário!"
-    return "Referência não encontrada", 404
+        <label>Educação:</label>
+        <textarea name="educacao" id="iEdu" rows="2" oninput="aoDigitar()">Licenciatura em Meteorologia - UEM</textarea>
 
-@app.route('/descarregar-pdf/<ref_id>', methods=['GET'])
-def descarregar_pdf(ref_id):
-    if TRANSACCOES.get(ref_id) != "PAID":
-        return "Acesso bloqueado. O pagamento não foi confirmado.", 403
+        <label>Cor do Layout:</label>
+        <select name="cor" id="iCor" onchange="aoDigitar()">
+            <option value="#1a365d">Azul Marinho</option>
+            <option value="#9b2c2c">Vermelho Escuro</option>
+            <option value="#234e52">Verde Petróleo</option>
+        </select>
 
-    from reportlab.lib.pagesizes import letter
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-    from reportlab.lib import colors
-    from reportlab.graphics.shapes import Drawing, Circle
+        <div class="caixa-pagamento">
+            <h3>Pagamento Seguro via USSD Push</h3>
+            <label>Escolha o Método:</label>
+            <select name="carteira">
+                <option value="mpesa">M-Pesa (*150#) - Conta: 844330181</option>
+                <option value="emola">e-Mola (*898#) - Conta: 861010333</option>
+            </select>
+            <label>Número do Telemóvel que vai Pagar:</label>
+            <input type="tel" name="telefone" placeholder="84XXXXXXX ou 86XXXXXXX" required>
+        </div>
 
-    dados = DADOS_CV.get(ref_id)
-    buffer = io.BytesIO()
-    
-    # Margens estreitas para optimizar o layout de duas colunas
-    doc = SimpleDocTemplate(buffer, pagesize=letter, leftMargin=30, rightMargin=30, topMargin=30, bottomMargin=30)
-    
-    cor_principal = colors.HexColor(dados['cor'])
-    styles = getSampleStyleSheet()
-    
-    title_style = ParagraphStyle('T', parent=styles['Heading1'], fontSize=22, textColor=cor_principal, spaceAfter=2)
-    sub_style = ParagraphStyle('S', parent=styles['Normal'], fontSize=10, textColor=colors.HexColor('#4a5568'), fontName='Helvetica-Bold', spaceAfter=12)
-    side_h = ParagraphStyle('SH', parent=styles['Normal'], fontSize=11, textColor=cor_principal, fontName='Helvetica-Bold', spaceBefore=10, spaceAfter=5)
-    side_b = ParagraphStyle('SB', parent=styles['Normal'], fontSize=9, leading=12, textColor=colors.HexColor('#2d3748'))
-    main_h = ParagraphStyle('MH', parent=styles['Heading2'], fontSize=12, textColor=cor_principal, spaceBefore=12, spaceAfter=5)
-    main_b = ParagraphStyle('MB', parent=styles['BodyText'], fontSize=9.5, leading=14, textColor=colors.HexColor('#333333'))
+        <button type="button" class="btn-acao" style="margin-top:15px;" onclick="enviarFormulario()">Pagar e Descarregar CV</button>
+    </form>
+</div>
 
-    # Desenho das bolinhas gráficas para as competências no PDF
-    def pontos_nivel(nv):
-        d = Drawing(60, 10)
-        for i in range(5):
-            c = cor_principal if i < nv else colors.HexColor('#e2e8f0')
-            d.add(Circle(5 + (i * 12), 5, 4, fillColor=c, strokeColor=None))
-        return d
+<div class="previsao-bloco">
+    <div class="folha-a4">
+        <h1 id="vNome" style="margin:0; uppercase;">-</h1>
+        <h3 id="vTitulo" style="margin:0; color:#718096; font-size:14px;">-</h3>
+        <p><b>Email:</b> <span id="vEmail">-</span> | <b>Tel:</b> <span id="vTel">-</span></p>
+        <hr>
+        <h4>PERFIL</h4>
+        <p id="vPerfil" style="white-space: pre-line; font-size:13px; color:#4a5568;"></p>
+        <h4>EXPERIÊNCIA PROFISSIONAL</h4>
+        <p id="vExp" style="white-space: pre-line; font-size:13px; color:#4a5568;"></p>
+        <h4>EDUCAÇÃO</h4>
+        <p id="vEdu" style="white-space: pre-line; font-size:13px; color:#4a5568;"></p>
+    </div>
+</div>
 
-    # Coluna Esquerda (Dados e Competências)
-    col_esquerda = [
-        Paragraph("DADOS PESSOAIS", side_h),
-        Paragraph(f"<b>Email:</b><br/>{dados['email']}", side_b),
-        Spacer(1, 4),
-        Paragraph(f"<b>Telefone:</b><br/>{dados['telefone_contacto']}", side_b),
-    ]
-    
-    # Processar competências vindas do formulário
-    linhas_comp = []
-    if dados['competencias']:
-        col_esquerda.append(Spacer(1, 10))
-        col_esquerda.append(Paragraph("COMPETÊNCIAS", side_h))
-        for linha in dados['competencias'].split('\n'):
-            if ',' in linha:
-                c, n = linha.split(',', 1)
-                try:
-                    linhas_comp.append([Paragraph(c.strip(), side_b), pontos_nivel(int(n.strip()))])
-                except: pass
-        if linhas_comp:
-            t_comp = Table(linhas_comp, colWidths=[100, 60])
-            t_comp.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'MIDDLE'), ('BOTTOMPADDING', (0,0), (-1,-1), 2)]))
-            col_esquerda.append(t_comp)
+<script>
+function aoDigitar() {
+    const cor = document.getElementById('iCor').value;
+    document.getElementById('vNome').innerText = document.getElementById('iNome').value;
+    document.getElementById('vNome').style.color = cor;
+    document.getElementById('vTitulo').innerText = document.getElementById('iTitulo').value;
+    document.getElementById('vEmail').innerText = document.getElementById('iEmail').value;
+    document.getElementById('vTel').innerText = document.getElementById('iTelCont').value;
+    document.getElementById('vPerfil').innerText = document.getElementById('iPerfil').value;
+    document.getElementById('vExp').innerText = document.getElementById('iExp').value;
+    document.getElementById('vEdu').innerText = document.getElementById('iEdu').value;
+}
 
-    # Coluna Direita (Nome, Perfil, Percurso)
-    col_direita = [
-        Paragraph(dados['nome'].upper(), title_style),
-        Paragraph(dados['titulo'].upper(), sub_style),
-    ]
-    if dados['perfil']:
-        col_direita.extend([Paragraph("PERFIL", main_h), Paragraph(dados['perfil'].replace('\n', '<br/>'), main_b)])
-    col_direita.extend([Paragraph("EXPERIÊNCIA PROFISSIONAL", main_h), Paragraph(dados['experiencia'].replace('\n', '<br/>'), main_b)])
-    col_direita.extend([Paragraph("EDUCAÇÃO E FORMAÇÃO", main_h), Paragraph(dados['educacao'].replace('\n', '<br/>'), main_b)])
+let verificarIntervalo;
 
-    # Matriz Mestre do Layout
-    tabela_mestre = Table([[col_esquerda, col_direita]], colWidths=[170, 380])
-    tabela_mestre.setStyle(TableStyle([
-        ('VALIGN', (0,0), (-1,-1), 'TOP'),
-        ('BACKGROUND', (0,0), (0,0), colors.HexColor('#fcfaf7')),
-        ('RIGHTPADDING', (0,0), (0,0), 10),
-        ('LEFTPADDING', (1,0), (1,0), 15),
-        ('LINEAFTER', (0,0), (0,0), 1, colors.HexColor('#e2e8f0')),
-    ]))
-    
-    doc.build([tabela_mestre])
-    buffer.seek(0)
+function enviarFormulario() {
+    const form = document.getElementById('meuForm');
+    document.getElementById('janelaAguardar').style.display = 'block';
 
-    # Limpeza da cache de dados
-    TRANSACCOES.pop(ref_id, None)
-    DADOS_CV.pop(ref_id, None)
+    fetch('/iniciar-pagamento', {
+        method: 'POST',
+        body: new FormData(form)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.status === "SUCCESS") {
+            const ref = data.ref;
+            
+            // Configura o botão vermelho de teste para simular o PIN com a referência correta
+            document.getElementById('btnSimularPin').onclick = function() {
+                fetch(`/confirmar-pagamento-teste/${ref}`)
+                .then(res => res.json())
+                .then(resData => {
+                    alert(resData.message);
+                });
+            };
 
-    return send_file(buffer, as_attachment=True, download_name="Curriculo_Premium.pdf", mimetype='application/pdf')
+            // Inicia a escuta em segundo plano (polling de 3 em 3 segundos)
+            verificarIntervalo = setInterval(() => {
+                fetch(`/checar-status/${ref}`)
+                .then(res => res.json())
+                .then(statusData => {
+                    if(statusData.status === "PAID") {
+                        clearInterval(verificarIntervalo);
+                        document.getElementById('janelaAguardar').style.display = 'none';
+                        window.location.href = `/descarregar-pdf/${ref}`;
+                    }
+                });
+            }, 3000);
+        }
+    });
+}
 
-if __name__ == '__main__':
-    app.run(debug=True)
+window.onload = aoDigitar;
+</script>
+
+</body>
+</html>
 
 
