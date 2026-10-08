@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Criador de CV Profissional Personalizado</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f0f4f8; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 700px; background: white; padding: 35px; margin: 0 auto; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+        h2 { color: #1a365d; text-align: center; margin-bottom: 25px; }
+        h3 { border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; color: #2d3748; margin-top: 30px; }
+        label { font-weight: 600; display: block; margin-top: 15px; color: #4a5568; }
+        input[type="text"], input[type="tel"], textarea, select { width: 100%; padding: 12px; margin-top: 6px; border: 1px solid #cbd5e0; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+        input[type="color"] { width: 60px; height: 40px; border: 1px solid #cbd5e0; border-radius: 6px; cursor: pointer; margin-top: 6px; display: block; }
+        .grid-opcoes { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .foto-box { background: #f7fafc; border: 2px dashed #cbd5e0; padding: 15px; border-radius: 6px; text-align: center; margin-top: 15px; }
+        .pagamento-box { background: #e6fffa; padding: 20px; border-radius: 8px; margin-top: 25px; border-left: 6px solid #319795; }
+        .aviso-pin { font-size: 12px; color: #2c7a7b; margin-top: 8px; font-weight: 500; }
+        button { width: 100%; background-color: #319795; color: white; padding: 14px; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; margin-top: 25px; cursor: pointer; transition: background 0.2s; }
+        button:hover { background-color: #2c7a7b; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Personalizar o meu Currículo Profissional</h2>
+    
+    <!-- O atributo enctype permite o envio correcto da fotografia para o servidor Python -->
+    <form action="/gerar-cv" method="POST" enctype="multipart/form-data">
+        
+        <h3>1. Dados de Identificação</h3>
+        <label for="nome">Nome Completo:</label>
+        <input type="text" id="nome" name="nome" placeholder="Ex: António Silva" required>
+
+        <div class="foto-box">
+            <label for="foto" style="margin-top:0; cursor:pointer; display:block;">📸 Adicionar Fotografia tipo Passe (Opcional)</label>
+            <input type="file" id="foto" name="foto" accept="image/*" style="margin-top:10px;">
+        </div>
+
+        <label for="experiencia">Experiência Profissional:</label>
+        <textarea id="experiencia" name="experiencia" rows="5" placeholder="Descreva os seus cargos e responsabilidades anteriores..." required></textarea>
+
+        <label for="educacao">Educação e Cursos:</label>
+        <textarea id="educacao" name="educacao" rows="4" placeholder="Indique os seus graus académicos e formações relevantes..." required></textarea>
+
+        <h3>2. Configuração Visual do Modelo</h3>
+        <div class="grid-opcoes">
+            <div>
+                <label for="template">Escolha o Modelo (Template):</label>
+                <select id="template" name="template">
+                    <option value="classico">Modelo Clássico</option>
+                    <option value="moderno">Modelo Moderno (Com Linha Divisória)</option>
+                    <option value="minimalista">Modelo Minimalista Clean</option>
+                </select>
+            </div>
+            <div>
+                <label for="cor">Cor de Destaque:</label>
+                <input type="color" id="cor" name="cor" value="#1a365d">
+            </div>
+        </div>
+
+        <div class="pagamento-box">
+            <h3>3. Pagamento Automático (Taxa: 50 MT)</h3>
+            <label for="carteira">Escolha a sua Carteira Móvel:</label>
+            <select id="carteira" name="carteira">
+                <option value="mpesa">M-Pesa (Vodacom)</option>
+                <option value="emola">e-Mola (Movitel)</option>
+            </select>
+
+            <label for="telefone">Número de Telefone da Conta Móvel:</label>
+            <input type="tel" id="telefone" name="telefone" placeholder="Ex: 84XXXXXXX ou 86XXXXXXX" required>
+            
+            <div class="aviso-pin">
+                💡 <b>Nota:</b> Após clicar no botão abaixo, irá receber uma notificação automática no seu telemóvel para introduzir o seu PIN e confirmar o pagamento.
+            </div>
+        </div>
+
+        <button type="submit">Pagar e Descarregar CV em PDF</button>
+    </form>
+</div>
+
+</body>
+</html>
